@@ -18,3 +18,4 @@ Implement the program that allow users to make their tasks in 2 and more threads
 2) I have this implementation now ```std::vector<std::thread> threads```, but also it may be done by ```std::packaged_task``` or ```async``` array. What is the best choise?
 3) Function ```push``` able to throw exception. Need I create my own exception?
 4) ThreadPool in my implementation is a singleton. What can be done to use ```whait()``` if user don't done it by hisself
+5) Is it good practice to use ```std::cerr``` instead of ```std::cout``` in multy-threading apps?
