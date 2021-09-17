@@ -16,7 +16,7 @@ void print() {
 
 int main()
 {
-    fun('+', FUN('?', FUN('8', std::async(DEFERRED, print))));
+    fun('+', FUN('?', FUN('8', std::async(DEFERRED, print))));      // +?8printer8?+
     std::cout << std::endl;
-    fun('+', FUN('8', std::async(DEFERRED, print)));
+    fun('+', FUN('8', std::async(DEFERRED, print)));                // +8printer8+
 }
