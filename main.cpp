@@ -63,6 +63,9 @@ enum class OutputMode {
 
 class OutputModule {
 	using collisionList = int;
+	
+	uint64_t displayX;
+	uint64_t displayY;
 
 	void print(collisionList, OutputMode, std::string file_path="") {
 
