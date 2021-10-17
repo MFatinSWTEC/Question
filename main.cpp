@@ -72,7 +72,7 @@ private:
     
     size_t id = -1;
     Position position;
-    int size = 20;
+    int size = 0;
     const Speed speed;
     std::vector<float> color;
 };
@@ -197,7 +197,7 @@ private:
 
 class Drawer {
 public:
-    const size_t delayAnimation = 30;
+    const size_t delayAnimation = 10;
 
     void disappear(PlanesControl& pc, std::mutex& mtx) {
         playAnimation(CellAnimation::DISAPPEAR, pc.getPlanes(), mtx);
@@ -220,7 +220,7 @@ private:
 
             std::this_thread::sleep_for(std::chrono::milliseconds(delayAnimation));
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
     }
 
     void showAnimation(CellAnimation animation, Plane& plane) {
@@ -391,15 +391,15 @@ public:
             pc.deletePlanesOutOfRadarRange();
             lock.unlock();
 
-            d.appear(pc, mtx);
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
             lock.lock();
-            for (int i = 0; i < 50; ++i) {
+            for (int i = 0; i < 5; ++i) {
                 pc.addRandomPlane();
             }
             lock.unlock();
+
+            d.appear(pc, mtx);
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
         }
     }
 
@@ -519,7 +519,7 @@ int main() {
 		return -1;
 	
     /* Create a windowed mode window and its OpenGL context */
-    GLFWwindow* window = glfwCreateWindow(screenSize, screenSize, "Alorithm", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(screenSize, screenSize, "Plane", nullptr, nullptr);
     if (!window)
     {
         glfwTerminate();
