@@ -89,15 +89,10 @@ public:
 
 
     bool addPlane(Position position, Speed speed) {
-        if (speed.first == 0 && speed.second == 0) {
+        if (!isPlaneValide(position, speed)) {
             return false;
         }
-        for(auto & plane: planes) {
-            if (plane.second.getPosition() == position) {
-                return false;
-            }
-        }
-        
+ 
         std::uniform_real_distribution<> distibutor(0.1, 0.9);
 
         auto color = { 
@@ -191,6 +186,18 @@ private:
     const size_t maxPositionY = screenSize / pointSize;
 
     std::unordered_map<size_t, Plane> planes;
+
+    bool isPlaneValide(Position& position, Speed& speed) {
+        if (speed.first == 0 && speed.second == 0) {
+            return false;
+        }
+        for (auto& plane : planes) {
+            if (plane.second.getPosition() == position) {
+                return false;
+            }
+        }
+        return true;
+    }
 };
 
 
@@ -210,14 +217,10 @@ private:
     void playAnimation(CellAnimation animationType, std::unordered_map<size_t, Plane>& planes, std::mutex& mtx) {
         int basicShift = pointSize / 2;
         for (int k = 0; k < pointSize; ++k) {
-
             for (auto& plane: planes) {
-               
                 std::unique_lock<std::mutex> lock(mtx);
                 showAnimation(animationType, plane.second);
-
             }
-
             std::this_thread::sleep_for(std::chrono::milliseconds(delayAnimation));
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(300));
@@ -281,8 +284,11 @@ public:
     using Position = std::pair<int, int>;
 
     using ID_Position = std::unordered_map<size_t, std::vector<Position>>;
-
+    // ключ - точка столкновения   значение - вектор векторов
     std::pair<ID_Position, std::vector<Position>> getFutureCollision(PlanesControl& pc) {
+
+        //std::unordered_map<Position, std::vector<std::vector<int>>>
+
         ID_Position id_position;
         std::vector<Position> pos_collisions;
         
@@ -290,23 +296,9 @@ public:
 
         while (!planes.empty()) {
             movePlanes(planes);
-            auto collisions = getCollision(planes);
-
-            for (auto& collision : collisions) {
-                pos_collisions.emplace_back(collision.first);
-
-                for (auto& id : collision.second) {
-                    planes.erase(id);
-                }
-            }
-
-            for (auto it = planes.begin(); it != planes.end();) {
-                if (!pc.isValidePosition(it->second.getPosition())) {
-                    it = planes.erase(it);
-                    continue;
-                }
-                ++it;
-            }
+            
+            eraseCollisionPlanes(planes, pos_collisions);
+            eraseOutOfRangePlanes(planes, pc);
 
             for (auto& plane : planes) {
                 id_position[plane.first].emplace_back(plane.second.getPosition());
@@ -316,6 +308,27 @@ public:
     }
 
 private:
+
+    void eraseCollisionPlanes(std::unordered_map<size_t, Plane>& planes, std::vector<Position>& pos_collisions) {
+        auto collisions = getCollision(planes);
+        for (auto& collision : collisions) {
+            pos_collisions.emplace_back(collision.first);
+
+            for (auto& id : collision.second) {
+                planes.erase(id);
+            }
+        }
+    }
+
+    void eraseOutOfRangePlanes(std::unordered_map<size_t, Plane>& planes, PlanesControl& pc) {
+        for (auto it = planes.begin(); it != planes.end();) {
+            if (!pc.isValidePosition(it->second.getPosition())) {
+                it = planes.erase(it);
+                continue;
+            }
+            ++it;
+        }
+    }
 
 
     struct pair_hash {
@@ -388,15 +401,16 @@ public:
             pc.movePlanes();
             auto coll = collision.getCollision(pc);
             pc.deleteCollisionPlanes(coll);
-            pc.deletePlanesOutOfRadarRange();
+            // -------------------------
+            pc.deletePlanesOutOfRadarRange(); // inside planes
             lock.unlock();
-
+            // ----------------------------
             lock.lock();
             for (int i = 0; i < 5; ++i) {
                 pc.addRandomPlane();
             }
             lock.unlock();
-
+            
             d.appear(pc, mtx);
 
             std::this_thread::sleep_for(std::chrono::milliseconds(200));
@@ -485,7 +499,17 @@ void drawFutureCollision(std::vector<std::pair<int, int>>& futCollision) {
         glColor3f(1.0, 0, 0);
         glVertex2f(posX, posY);
         glEnd();
-        glPopMatrix();
+
+        auto delta = 5 * sqrt(2);
+        
+        glBegin(GL_POLYGON);
+
+        glVertex2d(posX - delta, posY);
+        glVertex2d(posX, posY  + delta);
+        glVertex2d(posX + delta, posY);
+        glVertex2d(posX, posY - delta);
+
+        glEnd();
     }
 }
 
